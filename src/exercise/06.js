@@ -15,21 +15,36 @@ import {
 
 function PokemonInfo({pokemonName}) {
   const [pokemon, setPokemon] = React.useState(null)
+  const [status, setStatus] = React.useState('idle')
   const [error, setError] = React.useState('')
 
   React.useEffect(() => {
     if (pokemonName) {
       // 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
       setPokemon(null)
+      setStatus('pending')
 
       fetchPokemon(pokemonName)
-        .then(p => setPokemon(p))
-        .catch(e => setError(e))
+        .then(p => {
+          setPokemon(p)
+          setStatus('resolved')
+        })
+        .catch(e => {
+          setError(e)
+          setStatus('rejected')
+        })
     }
   }, [pokemonName])
 
-  if (!pokemonName) return 'Submit a pokemon'
-  if (error) {
+  if (status === 'idle') {
+    return 'Submit a pokemon'
+  }
+
+  if (status === 'pending') {
+    return <PokemonInfoFallback name={pokemonName} />
+  }
+
+  if (status === 'rejected') {
     return (
       <div role="alert">
         There was an error:{' '}
@@ -38,9 +53,11 @@ function PokemonInfo({pokemonName}) {
     )
   }
 
-  if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
+  if (status === 'resolved') {
+    return <PokemonDataView pokemon={pokemon} />
+  }
 
-  return <PokemonDataView pokemon={pokemon} />
+  return null
 }
 
 function App() {
